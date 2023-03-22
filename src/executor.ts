@@ -212,7 +212,7 @@ export class Executor implements IExecutor {
     }
 
     op_stop() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(0);
         this.stop = {
             type: 'stop',
             newState: this.state,
@@ -224,7 +224,7 @@ export class Executor implements IExecutor {
         this.push(this.pop().add(this.pop()));
     }
     op_mul() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(5);
         this.push(this.pop().mul(this.pop()));
     }
     op_sub() {
@@ -232,37 +232,37 @@ export class Executor implements IExecutor {
         this.push(this.pop().sub(this.pop()));
     }
     op_div() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(5);
         this.push(this.pop().div(this.pop()));
     }
     op_sdiv() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(5);
         this.push(this.pop().sdiv(this.pop()));
     }
     op_mod() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(5);
         this.push(this.pop().mod(this.pop()));
     }
     op_smod() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(5);
         this.push(this.pop().smod(this.pop()));
     }
     op_addmod() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(8);
         throw new Error('not implemented: addmod');
     }
     op_mulmod() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(8);
         this.push(this.pop().mul(this.pop()).mod(this.pop()))
     }
     op_exp() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(10);
         const a = this.pop();
         const exp = this.popAsNum();
         this.push(a.pow(exp));
     }
     op_signextend() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(5);
         // https://ethereum.stackexchange.com/questions/63062/evm-signextend-opcode-explanation
         const b = this.popAsNum();
         const x = this.pop();
@@ -346,12 +346,12 @@ export class Executor implements IExecutor {
         this.push(this.pop().sar(n))
     }
     op_sha3() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(30);
         const toHash = this.getData();
         this.push(shaOf(toHash));
     }
     op_address() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(this.state.address);
     }
     @asyncOp()
@@ -362,15 +362,15 @@ export class Executor implements IExecutor {
         this.push(bal);
     }
     op_origin() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(this.state.origin);
     }
     op_caller() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(this.state.caller);
     }
     op_callvalue() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(this.state.callvalue);
     }
     op_calldataload() {
@@ -380,11 +380,11 @@ export class Executor implements IExecutor {
         this.push(toUint(data));
     }
     op_calldatasize() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(U256(this.state.calldata.size));
     }
     op_calldatacopy() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         this.copyDataToMem(this.state.calldata);
     }
     op_codesize() {
@@ -392,7 +392,7 @@ export class Executor implements IExecutor {
         this.push(U256(this.code.code.size));
     }
     op_codecopy() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         this.copyDataToMem(this.code.code);
     }
     private copyDataToMem(from: IMemReader) {
@@ -405,11 +405,12 @@ export class Executor implements IExecutor {
         }
     }
     op_gasprice() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(this.state.gasPrice);
     }
     @asyncOp()
     async op_extcodesize() {
+        this.state.decrementGas(100);  // TODO: computation
         const address = this.pop();
         const contract = await this.state.session.getContract(address);
         this.push(U256(contract.code?.size ?? 0));
@@ -419,11 +420,11 @@ export class Executor implements IExecutor {
         throw new Error('not implemented: extcodecopy');
     }
     op_returndatasize() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(U256(this.lastReturndata.size));
     }
     op_returndatacopy() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3);  // TODO: computation
         const destOffset = this.popAsNum();
         const offset = this.popAsNum();
         const size = this.popAsNum();
@@ -438,95 +439,97 @@ export class Executor implements IExecutor {
         }
     }
     op_extcodehash() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3);  // TODO: computation
         throw new Error('not implemented: extcodehash');
     }
     op_blockhash() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(20);
         throw new Error('not implemented: blockhash');
     }
     op_coinbase() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         throw new Error('not implemented: coinbase');
     }
     op_timestamp() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(U256(this.state.timestamp));
     }
     op_number() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         throw new Error('not implemented: number');
     }
     op_difficulty() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(this.state.difficulty.copy());
     }
     op_gaslimit() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(this.state.gasLimit);
     }
     @asyncOp()
     async op_chainid() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         let chainId = to32ByteBuffer(await this.state.session.rpc.getChainId());
         this.push(U256(chainId.buffer));
     }
     @asyncOp()
     async op_selfbalance() {
+        this.state.decrementGas(5);
         this.push(await this.state.getBalance());
     }
     op_basefee() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         throw new Error('not implemented: basefee');
     }
     op_pop() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.pop();
     }
     op_mload() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         this.push(this.mem.get(this.popAsNum()));
     }
     op_mstore() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         this.mem.setUint256(this.popAsNum(), this.pop())
     }
     op_mstore8() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         const byte = this.pop().shiftRight(0xF0);
         this.mem.setUint256(this.popAsNum(), byte);
     }
 
     @asyncOp()
     async op_sload() {
+        this.state.decrementGas(3); // TODO: computation
         this.push(await this.state.getStorage(this.pop()));
     }
     op_sstore() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         this.state = this.state.setStorage(this.pop(), this.pop());
     }
     op_jump() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(8);
         // NOP (special implementation)
     }
     op_jumpi() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(10);
         // NOP (special implementation)
     }
     op_pc(num: number) {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(U256(num));
     }
     op_msize() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(U256(this.mem.size))
     }
     op_gas() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(this.state.gas);
     }
     op_jumpdest() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(1);
         // do nothing
     }
     private doOpPush(toPush: number[]) {
@@ -805,42 +808,42 @@ export class Executor implements IExecutor {
         return this.mem.slice(offset, size);
     }
     op_log0() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         const log: Log = { address: this.contractAddress, data: this.getData(), topics: [], }
         this.logs.push(log);
         this._onLog?.forEach(fn => fn(log));
     }
     op_log1() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         const log: Log = { address: this.contractAddress, data: this.getData(), topics: [this.pop()], }
         this.logs.push(log);
         this._onLog?.forEach(fn => fn(log));
     }
-    op_log2() {
+    op_log2() { // TODO: computation
         this.state.decrementGas(3);
         const log: Log = { address: this.contractAddress, data: this.getData(), topics: [this.pop(), this.pop()], }
         this.logs.push(log);
         this._onLog?.forEach(fn => fn(log));
     }
     op_log3() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         const log: Log = { address: this.contractAddress, data: this.getData(), topics: [this.pop(), this.pop(), this.pop()], }
         this.logs.push(log);
         this._onLog?.forEach(fn => fn(log));
     }
     op_log4() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         const log: Log = { address: this.contractAddress, data: this.getData(), topics: [this.pop(), this.pop(), this.pop(), this.pop()], }
         this.logs.push(log);
         this._onLog?.forEach(fn => fn(log));
     }
     op_create() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         throw new Error('not implemented: create');
     }
 
     @asyncOp()
-    async op_call() {
+    async op_call() {        
         // pick arguments
         const gas = this.pop();
         const contract = this.pop();
@@ -903,7 +906,7 @@ export class Executor implements IExecutor {
         throw new Error('not implemented: callcode');
     }
     op_return() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         this.stop = {
             type: 'return',
             data: this.getData(),
@@ -940,7 +943,7 @@ export class Executor implements IExecutor {
     }
 
     op_create2() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         throw new Error('not implemented: create2');
     }
 
@@ -970,7 +973,7 @@ export class Executor implements IExecutor {
         this.setCallResult(result, retOffset, retSize, executor.logs, 'staticcall');
     }
     op_revert() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         this.stop = {
             type: 'revert',
             data: this.getData(),
@@ -978,11 +981,11 @@ export class Executor implements IExecutor {
         }
     }
     op_invalid() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         throw new Error('not implemented: invalid');
     }
     op_selfdestruct() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(3); // TODO: computation
         throw new Error('not implemented: selfdestruct');
     }
 }
