@@ -21,4 +21,18 @@ describe('Gas consumption', () => {
         res = await executeBytecode('60ff600061ffff37')
         expect(res.exec.state.gasSpent.eq(new UInt256(14460))).to.be.true
     })
+    it('Check codecopy gas usage', async () => {
+        // Test a simple calldatacopy with destOffset = 0, size = 0xa
+        let res = await executeBytecode('61ffff50386000600039')
+        console.log(res.exec.state.gasSpent);
+        expect(res.exec.state.gasSpent.eq(new UInt256(22))).to.be.true
+        // Test a simple calldatacopy with destOffset = 0xffff, size = 0x17
+        res = await executeBytecode('61ffff5061ffff5061ffff5061ffff5038600061ffff39')
+        console.log(res.exec.state.gasSpent);
+        expect(res.exec.state.gasSpent.eq(new UInt256(14381))).to.be.true
+        // Test a simple calldatacopy with destOffset = 0, size = 0x48
+        res = await executeBytecode('7dffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f00000000000000000000000000000000000000000000000000000000000000005050386000600039')
+        console.log(res.exec.state.gasSpent);
+        expect(res.exec.state.gasSpent.eq(new UInt256(39))).to.be.true
+    })
 })

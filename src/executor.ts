@@ -414,7 +414,7 @@ export class Executor implements IExecutor {
         this.copyDataToMem(this.state.calldata);
     }
     op_codesize() {
-        this.state.decrementGas(3);
+        this.state.decrementGas(2);
         this.push(U256(this.code.code.size));
     }
     op_codecopy() {
