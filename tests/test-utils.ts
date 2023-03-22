@@ -62,7 +62,7 @@ export async function executeBytecode(ops: string | number[], opts?: Partial<New
     const buffer = await execWatchInstructions(exec);
     return {
         result: [...buffer ?? []],
-        exec,
+        exec
     };
 }
 

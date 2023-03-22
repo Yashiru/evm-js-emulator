@@ -164,13 +164,15 @@ class BlockchainState implements ExecState {
 
 
 
-    decrementGas(num: number | UInt256): void {
-        // TODO implement gas properly
-        // if (this.gas.lt(num)) {
-        //     throw new Error('Out of gas');
-        // }
-        // // decrement in a mutable way ()
-        // this.stack.gas.sub(num, true);
+    decrementGas(num: number | UInt256): void {        
+        if (this.gas.lt(num)) {
+            throw new Error('Out of gas');
+        }
+        // decrement in a mutable way ()
+        this.stack.gas.sub(num, true);
+
+        console.log("Decremented "+num+" gas");
+        
     }
 
     async newTx(data: NewTxData): Promise<ExecState> {

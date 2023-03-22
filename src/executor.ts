@@ -210,6 +210,33 @@ export class Executor implements IExecutor {
         this.opSpy?.push(`➡ ${elt ? '1' : '0'}`);
         this.stack.push(elt ? U256(1) : U256(0));
     }
+    /**
+     * The memory cost function for a given machine memory state
+     * @param a the number of words allocated in memory
+     */
+    cMem(a: number){
+        // See https://ethereum.github.io/yellowpaper/paper.pdf
+        // At happendix H => H.1 Gas cost
+        const gMem = 3;
+        return gMem * a + Math.floor((a*a) / 512);
+    }
+    expandMemCost(destOffset: number, size: number){
+        // See https://github.com/wolflo/evm-opcodes/blob/main/gas.md#a0-1-memory-expansion
+
+        // The previopus highest referenced memory address
+        const oldMemSize = this.mem.size
+        const oldMemSizeWords = Math.ceil(oldMemSize / 32)
+
+        // The highest referenced memory address after the current allocation
+        const newMemSize = destOffset + size > oldMemSize ? destOffset + size : oldMemSize
+        const newMemSizeWords = Math.ceil(newMemSize / 32)
+
+        console.log(oldMemSizeWords, newMemSizeWords, this.cMem(newMemSizeWords) - this.cMem(oldMemSizeWords));
+        
+        
+        // Number of (32-byte) words required for memory after the current allocation
+        return this.cMem(newMemSizeWords) - this.cMem(oldMemSizeWords)
+    }
 
     op_stop() {
         this.state.decrementGas(0);
@@ -384,7 +411,6 @@ export class Executor implements IExecutor {
         this.push(U256(this.state.calldata.size));
     }
     op_calldatacopy() {
-        this.state.decrementGas(3); // TODO: computation
         this.copyDataToMem(this.state.calldata);
     }
     op_codesize() {
@@ -392,13 +418,21 @@ export class Executor implements IExecutor {
         this.push(U256(this.code.code.size));
     }
     op_codecopy() {
-        this.state.decrementGas(3); // TODO: computation
         this.copyDataToMem(this.code.code);
     }
     private copyDataToMem(from: IMemReader) {
         const destOffset = this.popAsNum();
         const offset = this.popAsNum();
         const size = this.popAsNum();
+
+        const staticGas = 3
+        const dataSizeWords = Math.ceil(size / 32)
+        const expandMemCost = this.expandMemCost(destOffset, size)
+
+        this.state.decrementGas(
+            staticGas + 3 * dataSizeWords + expandMemCost
+        );
+        
         for (let i = 0; i < size; i++) {
             const byte = from.getByte(offset + i) ?? 0;
             this.mem.set(destOffset + i, byte);
