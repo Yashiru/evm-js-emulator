@@ -170,9 +170,6 @@ class BlockchainState implements ExecState {
         }
         // decrement in a mutable way ()
         this.stack.gas.sub(num, true);
-
-        console.log("Decremented "+num+" gas");
-        
     }
 
     async newTx(data: NewTxData): Promise<ExecState> {

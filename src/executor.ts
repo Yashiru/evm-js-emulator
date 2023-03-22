@@ -458,10 +458,10 @@ export class Executor implements IExecutor {
         this.push(U256(this.lastReturndata.size));
     }
     op_returndatacopy() {
-        this.state.decrementGas(3);  // TODO: computation
         const destOffset = this.popAsNum();
         const offset = this.popAsNum();
         const size = this.popAsNum();
+
         if (!size) {
             return;
         }
@@ -469,6 +469,13 @@ export class Executor implements IExecutor {
             throw new Error(`Cannot execute "returndatacopy" of ${size} bytes at an index (${offset}) that is higher than "returndatasize" (${this.lastReturndata.size})`);
         }
         for (let i = 0; i < size; i++) {
+            const staticGas = 3
+            const dataSizeWords = Math.ceil(size / 32)
+            const expandMemCost = this.expandMemCost(destOffset, size)
+            this.state.decrementGas(
+                staticGas + 3 * dataSizeWords + expandMemCost
+            );
+            
             this.mem.set(destOffset + i, this.lastReturndata.getByte(offset + i));
         }
     }
@@ -908,7 +915,7 @@ export class Executor implements IExecutor {
         const success = isSuccess(result);
         this.pushBool(success);
         this._onEndCall?.forEach(c => c(this, type, success, result));
-        this.lastReturndata = new MemReader([]);
+        this.lastReturndata = new MemReader(result.data || []);
 
 
         if (isFailure(result)) {
